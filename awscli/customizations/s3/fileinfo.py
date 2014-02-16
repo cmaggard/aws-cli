@@ -11,12 +11,10 @@ from dateutil.tz import tzlocal
 from botocore.compat import quote
 from awscli.customizations.s3.utils import find_bucket_key, \
         check_etag, check_error, operate, uni_print, \
-        guess_content_type, MD5Error, bytes_print
-
+        guess_content_type, guess_content_encoding, MD5Error
 
 class CreateDirectoryError(Exception):
     pass
-
 
 def read_file(filename):
     """
@@ -227,7 +225,7 @@ class FileInfo(TaskInfo):
             params['website_redirect_location'] = \
                     self.parameters['website_redirect'][0]
         if self.parameters['guess_mime_type']:
-            self._inject_content_type(params, self.src)
+            self._inject_content_type_encoding(params, self.src)
         if self.parameters['content_type']:
             params['content_type'] = self.parameters['content_type'][0]
         if self.parameters['cache_control']:
@@ -267,11 +265,14 @@ class FileInfo(TaskInfo):
         body.seek(0)
         check_etag(etag, body)
 
-    def _inject_content_type(self, params, filename):
+    def _inject_content_type_encoding(self, params, filename):
         # Add a content type param if we can guess the type.
         guessed_type = guess_content_type(filename)
         if guessed_type is not None:
             params['content_type'] = guessed_type
+        guessed_encoding = guess_content_encoding(filename)
+        if guessed_encoding is not None:
+            params['content_encoding'] = guessed_encoding
 
     def download(self):
         """

@@ -16,6 +16,8 @@ import mimetypes
 import hashlib
 import math
 import os
+import popen2
+import re
 import sys
 from collections import namedtuple, deque
 from functools import partial
@@ -294,6 +296,20 @@ def guess_content_type(filename):
     If the type cannot be guessed, a value of None is returned.
     """
     return mimetypes.guess_type(filename)[0]
+
+
+def guess_content_encoding(filename):
+    """Given a filename, guess its content encoding.
+
+    If the encoding cannot be guessed, a value of None is returned.
+    """
+    os, _ = popen2.popen2("file " + filename)
+    rex = re.compile('gzip')
+    out = os.read()
+    if re.search(rex, out):
+        return "gzip"
+
+    return mimetypes.guess_type(filename)[1]
 
 
 def relative_path(filename, start=os.path.curdir):
